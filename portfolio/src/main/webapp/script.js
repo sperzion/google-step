@@ -33,3 +33,9 @@ function addRandomFact() {
     const factContainer = document.getElementById('fact-container');
     factContainer.innerText = fact;
 }
+
+function retrieveInternLdaps() {
+    fetch('/data').then(response => response.text()).then(ldaps => {
+        document.getElementById('interns-container').innerText = ldaps;
+    });
+}
