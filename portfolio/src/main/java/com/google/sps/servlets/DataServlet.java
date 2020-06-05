@@ -14,12 +14,21 @@
 
 package com.google.sps.servlets;
 
-import com.google.gson.Gson;
+import static java.util.stream.Collectors.toList;
 
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.SortDirection;
+import com.google.gson.Gson;
+import com.google.sps.data.Comment;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.StreamSupport;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -30,13 +39,26 @@ import javax.servlet.http.HttpServletResponse;
 public class DataServlet extends HttpServlet {
 
   private static final String PARAM_NEW_COMMENT = "new-comment";
+  private static final String ENTITY_COMMENT = "Comment";
+  private static final String PROPERTY_CONTENT = "content";
+  private static final String PROPERTY_TIMESTAMP = "timestamp";
 
   private final Gson gson = new Gson();
+  private final DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 
   private final List<String> comments = new ArrayList<>();
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    Query query = new Query(ENTITY_COMMENT).addSort(PROPERTY_TIMESTAMP, SortDirection.DESCENDING);
+    PreparedQuery results = datastore.prepare(query);
+
+    List<Comment> comments = StreamSupport.stream(results.asIterable().spliterator(), false)
+      .map(entity -> new Comment(
+          (String) entity.getProperty(PROPERTY_CONTENT),
+          (long) entity.getProperty(PROPERTY_TIMESTAMP)))
+      .collect(toList());
+
     String json = gson.toJson(comments);
     response.setContentType("text/json;");
     response.getWriter().println(json);
@@ -51,6 +73,11 @@ public class DataServlet extends HttpServlet {
       return;
     }
 
+    Entity commentEntity = new Entity(ENTITY_COMMENT);
+    commentEntity.setProperty(PROPERTY_CONTENT, newComment);
+    commentEntity.setProperty(PROPERTY_TIMESTAMP, System.currentTimeMillis());
+
+    datastore.put(commentEntity);
     comments.add(newComment);
     response.sendRedirect("/index.html");
   }
