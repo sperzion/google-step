@@ -14,8 +14,17 @@
       <button onclick="addRandomFact()">Random personal fact</button>
       <div id="fact-container"></div>
       <p><a href="https://www.linkedin.com/in/jkaihong/">LinkedIn</a></p>
-      <button onclick="retrieveInternLdaps()">Interns</button>
-      <div id="interns-container"></div>
+
+      <p />
+      <form action="/data" method="POST">
+        <label for="new-comment">Send a comment!<br/>
+        <input type="text" name="new-comment" pattern=".+">
+        <br/><br/>
+        <input type="submit" value="Send" />
+      </form>
+      <p />
+      <button type="button" onclick="retrieveComments()">View comments</button>
+      <div id="comments-container"></div>
     </div>
   </body>
 </html>
